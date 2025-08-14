@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encryption & Decryption Tool</title>
+    <title>Cipher, Hashing & Steganography Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -41,14 +42,17 @@
              cursor: pointer;
              padding: 0.25rem;
         }
+        #steganography-canvas {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-6 lg:p-8">
 
     <div class="max-w-7xl mx-auto">
         <header class="text-center mb-10">
-            <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-white">Cipher Tool</h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Encrypt, Decrypt, and Analyze classic ciphers.</p>
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-white">Cipher, Hashing & Steganography Tool</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Encrypt, Decrypt, Hash, Hide, and Analyze data.</p>
         </header>
 
         <div class="relative flex flex-col lg:flex-row items-center justify-center gap-8">
@@ -70,6 +74,7 @@
                     <div>
                         <label for="encrypt-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Method:</label>
                         <select id="encrypt-method" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="aes">AES-256</option>
                             <option value="caesar">Caesar Cipher</option>
                             <option value="substitution">Substitution Cipher</option>
                             <option value="vigenere">Vigenère Cipher</option>
@@ -78,11 +83,11 @@
                         </select>
                     </div>
                     <div id="encrypt-key-container">
-                        <label for="encrypt-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Key (Shift for Caesar):</label>
+                        <label for="encrypt-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Key (Passphrase):</label>
                         <div class="flex items-center gap-2 mt-1">
-                            <input type="text" id="encrypt-key" value="3" class="block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input type="text" id="encrypt-key" value="secret key 123" class="block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <button id="generate-encrypt-key" class="hidden p-2 rounded-md bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500" title="Generate Random Key">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.261.43.392.86.392 1.29 0 .43-.13.86-.392 1.29a3.37 3.37 0 0 1-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A2.37 2.37 0 0 0 5.624 8.5c0-.596.246-1.15.658-1.568C7.173 5.01 8.548 4 10.348 4H15.5a.5.5 0 0 1 0 1h-5.152c-1.802 0-3.177 1.01-4.123 2.082a2.37 2.37 0 0 0-.657 1.568c0 .596.246 1.15.657 1.568C7.177 10.99 8.552 12 10.352 12H11.5a.5.5 0 0 1 0 1h-1.152c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.376 9.21c-.261-.43-.392-.86-.392-1.29 0 .43.13.86.392-1.29C4.938 6.19 5.312 5.64 5.803 5.088 6.757 4.01 8.132 3 10 3h.5a.5.5 0 0 1 0 1H10c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 5.376 7.5c0 .596.246 1.15.658 1.568C6.827 9.99 8.202 11 10 11h.5a.5.5 0 0 1 0 1H10c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.002 8.71c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29c.26-.43.635-.98 1.126-1.532C6.173 3.24 7.798 2 10 2h5.5a.5.5 0 0 1 0 1H10c-1.802 0-3.177 1.01-4.123 2.082A2.37 2.37 0 0 0 5.22 6.432c0 .596.246 1.15.657 1.568C6.723 8.99 8.098 10 9.898 10H15.5a.5.5 0 0 1 0 1h-5.602c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.898 7.21c-.261-.43-.392-.86-.392-1.29 0-.43.13-.86.392-1.29C4.158 4.19 4.532 3.64 5.024 3.088 5.977 2.01 7.352 1 9.152 1H15.5a.5.5 0 0 1 0 1h-6.348c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 4.376 5.5c0 .596.246 1.15.658 1.568C5.827 7.99 7.202 9 9 9h.5a.5.5 0 0 1 0 1H9c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.002 6.21c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29C3.258 3.19 3.632 2.64 4.124 2.088 5.077 1.01 6.452 0 8.252 0H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V.5H8.252C6.452.5 5.077 1.51 4.124 2.582A2.37 2.37 0 0 0 3.468 4.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.077 9.49 6.452 10.5 8.252 10.5H9.5a.5.5 0 0 1 0 1h-1.248c-1.8 0-3.175-1.01-4.123-2.082a2.37 2.37 0 0 0-.657-1.568c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .657-1.568C5.075 3.51 6.45 2.5 8.25 2.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V3.5h-7.25c-1.8 0-3.175-1.01-4.123 2.082A2.37 2.37 0 0 0 3.47 7.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.075 12.49 6.45 13.5 8.25 13.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-.5H8.25c-1.8 0-3.175-1.01-4.123-2.082A2.37 2.37 0 0 0 3.47 9.85c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .656-1.568C5.075 5.51 6.45 4.5 8.25 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5h-7.25c-2.202 0-3.827 1.24-4.874 2.418A3.37 3.37 0 0 1 2.25 9.21c-.261.43-.392.86-.392-1.29 0 .43.13.86.392 1.29.26.43.635.98 1.126 1.532C4.173 14.76 5.798 16 8 16h7.5a.5.5 0 0 1 .5-.5v-1a.5.5 0 0 1 1 0v1a1.5 1.5 0 0 1-1.5 1.5H8c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 .75 9.21c0-.615.17-1.215.5-1.756C2.125 6.01 3.927 4.5 6.5 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6.5c-2.573 0-4.375 1.51-5.25 2.956C.82 9.17.5 10.036.5 11a2.5 2.5 0 0 0 2.5 2.5h10.5a.5.5 0 0 1 0 1H3a3.5 3.5 0 0 1-3.5-3.5c0-1.18.34-2.274.968-3.218C1.453 6.01 3.251 4.5 6 4.5h9.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 0 3.5z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.261.43.392.86.392 1.29 0 .43-.13.86-.392 1.29a3.37 3.37 0 0 1-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A2.37 2.37 0 0 0 5.624 8.5c0-.596.246-1.15.658-1.568C7.173 5.01 8.548 4 10.348 4H15.5a.5.5 0 0 1 0 1h-5.152c-1.802 0-3.177 1.01-4.123 2.082a2.37 2.37 0 0 0-.657 1.568c0 .596.246 1.15.657 1.568C7.177 10.99 8.552 12 10.352 12H11.5a.5.5 0 0 1 0 1h-1.152c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.376 9.21c-.261-.43-.392-.86-.392-1.29 0 .43.13.86.392-1.29C4.938 6.19 5.312 5.64 5.803 5.088 6.757 4.01 8.132 3 10 3h.5a.5.5 0 0 1 0 1H10c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 5.376 7.5c0 .596.246 1.15.658 1.568C6.827 9.99 8.202 11 10 11h.5a.5.5 0 0 1 0 1H10c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.002 8.71c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29c.26-.43.635-.98 1.126-1.532C6.173 3.24 7.798 2 10 2h5.5a.5.5 0 0 1 0 1H10c-1.802 0-3.177 1.01-4.123 2.082A2.37 2.37 0 0 0 5.22 6.432c0 .596.246 1.15.657 1.568C6.723 8.99 8.098 10 9.898 10H15.5a.5.5 0 0 1 0 1h-5.602c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.898 7.21c-.261-.43-.392-.86-.392-1.29 0-.43.13-.86.392-1.29C4.158 4.19 4.532 3.64 5.024 3.088 5.977 2.01 7.352 1 9.152 1H15.5a.5.5 0 0 1 0 1h-6.348c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 4.376 5.5c0 .596.246 1.15.658 1.568C5.827 7.99 7.202 9 9 9h.5a.5.5 0 0 1 0 1H9c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.002 6.21c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29C3.258 3.19 3.632 2.64 4.124 2.088 5.077 1.01 6.452 0 8.252 0H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V.5H8.252C6.452.5 5.077 1.51 4.124 2.582A2.37 2.37 0 0 0 3.468 4.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.077 9.49 6.452 10.5 8.252 10.5H9.5a.5.5 0 0 1 0 1h-1.248c-1.8 0-3.175-1.01-4.123-2.082a2.37 2.37 0 0 0-.657-1.568c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .657-1.568C5.075 3.51 6.45 2.5 8.25 2.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V3.5h-7.25c-1.8 0-3.175-1.01-4.123 2.082A2.37 2.37 0 0 0 3.47 7.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.075 12.49 6.45 13.5 8.25 13.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-.5H8.25c-1.8 0-3.175-1.01-4.123-2.082A2.37 2.37 0 0 0 3.47 9.85c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .656-1.568C5.075 5.51 6.45 4.5 8.25 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5h-7.25c-2.202 0-3.827 1.24-4.874-2.418A3.37 3.37 0 0 1 2.25 9.21c-.261.43-.392.86-.392-1.29 0 .43.13.86.392 1.29.26.43.635.98 1.126 1.532C4.173 14.76 5.798 16 8 16h7.5a.5.5 0 0 1 .5-.5v-1a.5.5 0 0 1 1 0v1a1.5 1.5 0 0 1-1.5 1.5H8c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 .75 9.21c0-.615.17-1.215.5-1.756C2.125 6.01 3.927 4.5 6.5 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6.5c-2.573 0-4.375 1.51-5.25 2.956C.82 9.17.5 10.036.5 11a2.5 2.5 0 0 0 2.5 2.5h10.5a.5.5 0 0 1 0 1H3a3.5 3.5 0 0 1-3.5-3.5c0-1.18.34-2.274.968-3.218C1.453 6.01 3.251 4.5 6 4.5h9.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 0 3.5z"/></svg>
                             </button>
                         </div>
                     </div>
@@ -127,6 +132,7 @@
                     <div>
                         <label for="decrypt-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Method:</label>
                         <select id="decrypt-method" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="aes">AES-256</option>
                             <option value="caesar">Caesar Cipher</option>
                             <option value="substitution">Substitution Cipher</option>
                             <option value="vigenere">Vigenère Cipher</option>
@@ -135,11 +141,11 @@
                         </select>
                     </div>
                     <div id="decrypt-key-container">
-                        <label for="decrypt-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Key (Shift for Caesar):</label>
+                        <label for="decrypt-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Key (Passphrase):</label>
                          <div class="flex items-center gap-2 mt-1">
-                            <input type="text" id="decrypt-key" value="3" class="block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <input type="text" id="decrypt-key" value="secret key 123" class="block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <button id="generate-decrypt-key" class="hidden p-2 rounded-md bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500" title="Generate Random Key">
-                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.261.43.392.86.392 1.29 0 .43-.13.86-.392 1.29a3.37 3.37 0 0 1-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A2.37 2.37 0 0 0 5.624 8.5c0-.596.246-1.15.658-1.568C7.173 5.01 8.548 4 10.348 4H15.5a.5.5 0 0 1 0 1h-5.152c-1.802 0-3.177 1.01-4.123 2.082a2.37 2.37 0 0 0-.657 1.568c0 .596.246 1.15.657 1.568C7.177 10.99 8.552 12 10.352 12H11.5a.5.5 0 0 1 0 1h-1.152c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.376 9.21c-.261-.43-.392-.86-.392-1.29 0 .43.13.86.392-1.29C4.938 6.19 5.312 5.64 5.803 5.088 6.757 4.01 8.132 3 10 3h.5a.5.5 0 0 1 0 1H10c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 5.376 7.5c0 .596.246 1.15.658 1.568C6.827 9.99 8.202 11 10 11h.5a.5.5 0 0 1 0 1H10c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.002 8.71c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29c.26-.43.635-.98 1.126-1.532C6.173 3.24 7.798 2 10 2h5.5a.5.5 0 0 1 0 1H10c-1.802 0-3.177 1.01-4.123 2.082A2.37 2.37 0 0 0 5.22 6.432c0 .596.246 1.15.657 1.568C6.723 8.99 8.098 10 9.898 10H15.5a.5.5 0 0 1 0 1h-5.602c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.898 7.21c-.261-.43-.392-.86-.392-1.29 0-.43.13-.86.392-1.29C4.158 4.19 4.532 3.64 5.024 3.088 5.977 2.01 7.352 1 9.152 1H15.5a.5.5 0 0 1 0 1h-6.348c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 4.376 5.5c0 .596.246 1.15.658 1.568C5.827 7.99 7.202 9 9 9h.5a.5.5 0 0 1 0 1H9c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.002 6.21c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29C3.258 3.19 3.632 2.64 4.124 2.088 5.077 1.01 6.452 0 8.252 0H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V.5H8.252C6.452.5 5.077 1.51 4.124 2.582A2.37 2.37 0 0 0 3.468 4.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.077 9.49 6.452 10.5 8.252 10.5H9.5a.5.5 0 0 1 0 1h-1.248c-1.8 0-3.175-1.01-4.123-2.082a2.37 2.37 0 0 0-.657-1.568c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .657-1.568C5.075 3.51 6.45 2.5 8.25 2.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V3.5h-7.25c-1.8 0-3.175-1.01-4.123 2.082A2.37 2.37 0 0 0 3.47 7.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.075 12.49 6.45 13.5 8.25 13.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-.5H8.25c-1.8 0-3.175-1.01-4.123-2.082A2.37 2.37 0 0 0 3.47 9.85c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .656-1.568C5.075 5.51 6.45 4.5 8.25 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5h-7.25c-2.202 0-3.827 1.24-4.874 2.418A3.37 3.37 0 0 1 2.25 9.21c-.261.43-.392.86-.392-1.29 0 .43.13.86.392 1.29.26.43.635.98 1.126 1.532C4.173 14.76 5.798 16 8 16h7.5a.5.5 0 0 1 .5-.5v-1a.5.5 0 0 1 1 0v1a1.5 1.5 0 0 1-1.5 1.5H8c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 .75 9.21c0-.615.17-1.215.5-1.756C2.125 6.01 3.927 4.5 6.5 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6.5c-2.573 0-4.375 1.51-5.25 2.956C.82 9.17.5 10.036.5 11a2.5 2.5 0 0 0 2.5 2.5h10.5a.5.5 0 0 1 0 1H3a3.5 3.5 0 0 1-3.5-3.5c0-1.18.34-2.274.968-3.218C1.453 6.01 3.251 4.5 6 4.5h9.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 0 3.5z"/></svg>
+                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.261.43.392.86.392 1.29 0 .43-.13.86-.392 1.29a3.37 3.37 0 0 1-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A2.37 2.37 0 0 0 5.624 8.5c0-.596.246-1.15.658-1.568C7.173 5.01 8.548 4 10.348 4H15.5a.5.5 0 0 1 0 1h-5.152c-1.802 0-3.177 1.01-4.123 2.082a2.37 2.37 0 0 0-.657 1.568c0 .596.246 1.15.657 1.568C7.177 10.99 8.552 12 10.352 12H11.5a.5.5 0 0 1 0 1h-1.152c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.376 9.21c-.261-.43-.392-.86-.392-1.29 0 .43.13.86.392-1.29C4.938 6.19 5.312 5.64 5.803 5.088 6.757 4.01 8.132 3 10 3h.5a.5.5 0 0 1 0 1H10c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 5.376 7.5c0 .596.246 1.15.658 1.568C6.827 9.99 8.202 11 10 11h.5a.5.5 0 0 1 0 1H10c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 4.002 8.71c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29c.26-.43.635-.98 1.126-1.532C6.173 3.24 7.798 2 10 2h5.5a.5.5 0 0 1 0 1H10c-1.802 0-3.177 1.01-4.123 2.082A2.37 2.37 0 0 0 5.22 6.432c0 .596.246 1.15.657 1.568C6.723 8.99 8.098 10 9.898 10H15.5a.5.5 0 0 1 0 1h-5.602c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.898 7.21c-.261-.43-.392-.86-.392-1.29 0-.43.13-.86.392-1.29C4.158 4.19 4.532 3.64 5.024 3.088 5.977 2.01 7.352 1 9.152 1H15.5a.5.5 0 0 1 0 1h-6.348c-1.798 0-3.173-1.01-4.126 2.082A2.37 2.37 0 0 0 4.376 5.5c0 .596.246 1.15.658 1.568C5.827 7.99 7.202 9 9 9h.5a.5.5 0 0 1 0 1H9c-2.202 0-3.827-1.24-4.874-2.418A3.37 3.37 0 0 1 3.002 6.21c-.261-.43-.392-.86-.392-1.29s.13-.86.392-1.29C3.258 3.19 3.632 2.64 4.124 2.088 5.077 1.01 6.452 0 8.252 0H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V.5H8.252C6.452.5 5.077 1.51 4.124 2.582A2.37 2.37 0 0 0 3.468 4.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.077 9.49 6.452 10.5 8.252 10.5H9.5a.5.5 0 0 1 0 1h-1.248c-1.8 0-3.175-1.01-4.123-2.082a2.37 2.37 0 0 0-.657-1.568c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .657-1.568C5.075 3.51 6.45 2.5 8.25 2.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V3.5h-7.25c-1.8 0-3.175-1.01-4.123 2.082A2.37 2.37 0 0 0 3.47 7.15c-.246.412-.369.86-.369 1.35 0 .49.123.938.369 1.35a2.37 2.37 0 0 0 .656 1.568C5.075 12.49 6.45 13.5 8.25 13.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0v-.5H8.25c-1.8 0-3.175-1.01-4.123-2.082A2.37 2.37 0 0 0 3.47 9.85c-.246-.412-.369-.86-.369-1.35 0-.49.123-.938.369-1.35a2.37 2.37 0 0 0 .656-1.568C5.075 5.51 6.45 4.5 8.25 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5h-7.25c-2.202 0-3.827 1.24-4.874-2.418A3.37 3.37 0 0 1 2.25 9.21c-.261.43-.392.86-.392-1.29 0 .43.13.86.392 1.29.26.43.635.98 1.126 1.532C4.173 14.76 5.798 16 8 16h7.5a.5.5 0 0 1 .5-.5v-1a.5.5 0 0 1 1 0v1a1.5 1.5 0 0 1-1.5 1.5H8c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 .75 9.21c0-.615.17-1.215.5-1.756C2.125 6.01 3.927 4.5 6.5 4.5H15.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6.5c-2.573 0-4.375 1.51-5.25 2.956C.82 9.17.5 10.036.5 11a2.5 2.5 0 0 0 2.5 2.5h10.5a.5.5 0 0 1 0 1H3a3.5 3.5 0 0 1-3.5-3.5c0-1.18.34-2.274.968-3.218C1.453 6.01 3.251 4.5 6 4.5h9.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-1 0V5.5H6c-2.761 0-4.764-1.67-5.952-3.048A4.37 4.37 0 0 1 0 3.5z"/></svg>
                             </button>
                         </div>
                     </div>
@@ -160,20 +166,76 @@
             </div>
         </div>
 
+        <!-- Hashing Section -->
+        <div class="max-w-7xl mx-auto mt-10">
+            <div id="hashing-container" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md tool-container">
+                <h2 class="text-2xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Hashing Tools</h2>
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold">SHA-256 Hash Generator</h3>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Generate a SHA-256 hash for any text or file. Hashing is a one-way process used for verifying data integrity and securely storing passwords.
+                    </p>
+                    <div>
+                        <label for="hash-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Text to Hash:</label>
+                        <textarea id="hash-text" rows="3" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    </div>
+                     <div>
+                        <label for="hash-file-input" class="file-input-label block text-sm font-medium text-center text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-gray-700 hover:bg-purple-200 dark:hover:bg-gray-600">
+                            Or Upload a File to Hash
+                        </label>
+                        <input type="file" id="hash-file-input" class="hidden">
+                        <span id="hash-file-name" class="text-sm text-gray-500 dark:text-gray-400 mt-1 block"></span>
+                    </div>
+                    <button id="hash-btn" class="w-full btn-primary bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700">
+                        Generate SHA-256 Hash
+                    </button>
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Resulting Hash:</label>
+                             <button id="copy-hash" class="icon-btn text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" title="Copy to Clipboard">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                            </button>
+                        </div>
+                        <div id="hash-result" class="mt-1 p-3 w-full rounded-md bg-gray-100 dark:bg-gray-700 result-box font-mono"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Cryptanalysis Section -->
         <div class="max-w-7xl mx-auto mt-10">
             <div id="analysis-container" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md tool-container">
                 <h2 class="text-2xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Cryptanalysis Tools</h2>
-                <div class="space-y-4">
-                    <h3 class="text-xl font-semibold">Letter Frequency Analysis</h3>
-                    <p class="text-gray-600 dark:text-gray-400">
-                        Analyze the text in the 'Decrypt / Decode' result box to see the frequency of each letter. This is a classic technique for breaking simple substitution ciphers. In English, 'E', 'T', and 'A' are the most common letters.
-                    </p>
-                    <button id="analyze-btn" class="btn-primary bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
-                        Analyze Decrypted Text
-                    </button>
-                    <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                        <canvas id="frequency-chart"></canvas>
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-xl font-semibold">Letter Frequency Analysis</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">
+                            Analyze the text in the 'Decrypt / Decode' result box to see the frequency of each letter. This is a classic technique for breaking simple substitution ciphers.
+                        </p>
+                        <button id="analyze-btn" class="mt-2 btn-primary bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+                            Analyze Text
+                        </button>
+                        <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                            <canvas id="frequency-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                         <h3 class="text-xl font-semibold">Caesar Cipher Brute Force</h3>
+                         <p class="text-gray-600 dark:text-gray-400 mt-2">
+                            If you have text encrypted with a Caesar cipher but don't know the key, this tool will try all 25 possible keys to find the original message.
+                        </p>
+                        <div>
+                            <label for="brute-force-text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">Ciphertext to crack:</label>
+                            <textarea id="brute-force-text" rows="3" class="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <button id="brute-force-btn" class="mt-2 btn-primary bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">
+                            Brute Force Attack
+                        </button>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">Possible Decryptions:</label>
+                            <div id="brute-force-result" class="mt-1 p-3 w-full h-48 overflow-y-auto rounded-md bg-gray-100 dark:bg-gray-700 result-box font-mono"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -213,6 +275,18 @@
         const frequencyChartCanvas = document.getElementById('frequency-chart').getContext('2d');
         let frequencyChart = null;
 
+        const bruteForceText = document.getElementById('brute-force-text');
+        const bruteForceBtn = document.getElementById('brute-force-btn');
+        const bruteForceResult = document.getElementById('brute-force-result');
+        
+        const hashText = document.getElementById('hash-text');
+        const hashFileInput = document.getElementById('hash-file-input');
+        const hashFileName = document.getElementById('hash-file-name');
+        const hashBtn = document.getElementById('hash-btn');
+        const hashResult = document.getElementById('hash-result');
+        const copyHashBtn = document.getElementById('copy-hash');
+
+
         // --- Global State ---
         let originalEncryptFileName = '';
         let originalDecryptFileName = '';
@@ -234,6 +308,26 @@
 
 
         // --- Cipher Logic ---
+        function aesEncrypt(text, key) {
+            if (!key) return 'Error: AES requires a key.';
+            return CryptoJS.AES.encrypt(text, key).toString();
+        }
+
+        function aesDecrypt(ciphertext, key) {
+            if (!key) return 'Error: AES requires a key.';
+            try {
+                const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+                const originalText = bytes.toString(CryptoJS.enc.Utf8);
+                if (!originalText) {
+                    throw new Error("Invalid key or ciphertext");
+                }
+                return originalText;
+            } catch (e) {
+                console.error(e);
+                return 'Error: Decryption failed. Invalid key or ciphertext.';
+            }
+        }
+
         function caesarCipher(text, shift, encrypt = true) {
             shift = parseInt(shift);
             if (isNaN(shift)) return 'Error: Shift key must be a number.';
@@ -308,6 +402,10 @@
                 }).join(' ');
             }
         }
+        
+        function sha256Hash(text) {
+            return CryptoJS.SHA256(text).toString(CryptoJS.enc.Hex);
+        }
 
         // --- Analysis Logic ---
         function calculateFrequency(text) {
@@ -376,6 +474,19 @@
                 targetFileName.textContent = `File: ${file.name}`;
             }
         }
+        
+        function handleHashFile(file, targetTextArea, targetFileName, callback) {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const fileContent = e.target.result;
+                    targetTextArea.value = `Hashing content of file: ${file.name}`;
+                    callback(fileContent);
+                };
+                reader.readAsText(file);
+                targetFileName.textContent = `File: ${file.name}`;
+            }
+        }
 
         function downloadFile(content, originalName, mode) {
             const blob = new Blob([content], { type: 'text/plain' });
@@ -434,7 +545,8 @@
             const key = encryptKey.value;
             let result = '';
 
-            if (method === 'caesar') result = caesarCipher(text, key, true);
+            if (method === 'aes') result = aesEncrypt(text, key);
+            else if (method === 'caesar') result = caesarCipher(text, key, true);
             else if (method === 'substitution') result = substitutionCipher(text, key, true);
             else if (method === 'vigenere') result = vigenereCipher(text, key, true);
             else if (method === 'atbash') result = atbashCipher(text);
@@ -455,7 +567,8 @@
             const key = decryptKey.value;
             let result = '';
 
-            if (method === 'caesar') result = caesarCipher(text, key, false);
+            if (method === 'aes') result = aesDecrypt(text, key);
+            else if (method === 'caesar') result = caesarCipher(text, key, false);
             else if (method === 'substitution') result = substitutionCipher(text, key, false);
             else if (method === 'vigenere') result = vigenereCipher(text, key, false);
             else if (method === 'atbash') result = atbashCipher(text);
@@ -473,12 +586,46 @@
         analyzeBtn.addEventListener('click', () => {
             const textToAnalyze = decryptResult.textContent;
             if (!textToAnalyze) {
-                alert('There is no text in the decryption result box to analyze.');
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+                        <p class="text-lg mb-4">There is no text in the decryption result box to analyze.</p>
+                        <button onclick="this.parentElement.parentElement.remove()" class="btn-primary bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
                 return;
             }
             const frequencies = calculateFrequency(textToAnalyze);
             displayFrequencyChart(frequencies);
         });
+
+        bruteForceBtn.addEventListener('click', () => {
+            const text = bruteForceText.value;
+            if (!text) return;
+            let resultsHTML = '';
+            for (let i = 1; i <= 25; i++) {
+                const decryptedText = caesarCipher(text, i, false);
+                resultsHTML += `<div class="mb-2"><span class="font-bold text-indigo-400">Shift ${i}:</span> ${decryptedText}</div>`;
+            }
+            bruteForceResult.innerHTML = resultsHTML;
+        });
+
+        hashFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleHashFile(file, hashText, hashFileName, (fileContent) => {
+                hashResult.textContent = sha256Hash(fileContent);
+            });
+        });
+
+        hashBtn.addEventListener('click', () => {
+            const text = hashText.value;
+            if(!text) return;
+            hashResult.textContent = sha256Hash(text);
+        });
+        
+        copyHashBtn.addEventListener('click', () => copyToClipboard(hashResult.textContent));
 
         downloadEncryptBtn.addEventListener('click', () => downloadFile(encryptResult.textContent, originalEncryptFileName || 'text.txt', 'processed'));
         downloadDecryptBtn.addEventListener('click', () => downloadFile(decryptResult.textContent, originalDecryptFileName || 'text.txt', 'processed'));
@@ -498,7 +645,11 @@
              keyContainer.classList.remove('hidden'); // Show by default
              generateBtn.classList.add('hidden'); // Hide by default
 
-             if (method === 'caesar') {
+             if (method === 'aes') {
+                label.textContent = 'Key (Passphrase):';
+                keyInput.placeholder = 'e.g., secret key 123';
+                keyInput.value = 'secret key 123';
+             } else if (method === 'caesar') {
                 label.textContent = 'Key (Shift Number):';
                 keyInput.placeholder = 'e.g., 3';
                 if(keyInput.value.length > 2 || isNaN(keyInput.value)) keyInput.value = '3';
